@@ -40,7 +40,7 @@ def student_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-@api_view(['GET','POST'])
+@api_view(['GET'])
 def employee_list (request):
     if request.method=='GET':
         queryset=Student.objects.all()
