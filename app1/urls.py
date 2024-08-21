@@ -6,5 +6,6 @@ urlpatterns = [
     path('student_list/',student_list ),
     path("s_list/",employee_list),
     path("emp_list/",emp_list),
-    path("emp_list_id/<int:pk>/",emp_update)
+    path("emp_list_id/<int:pk>/",emp_update),
+    path('map/', MapView.as_view(), name='map-view'),
 ]
