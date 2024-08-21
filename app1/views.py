@@ -190,6 +190,72 @@ def emp_update(request,pk):
 
 
 
+# from django.http import JsonResponse
+# from django.views import View
+# import requests
+# import urllib.parse
+
+# class MapView(View):
+#     def get(self, request):
+#         startpoint = request.GET.get('startpoint')
+#         endpoint = request.GET.get('endpoint')
+#         midpoints = request.GET.getlist('midpoints')
+
+#         if not startpoint or not endpoint:
+#             return JsonResponse({'error': 'startpoint and endpoint are required'}, status=400)
+
+#         # Split the midpoints by comma if passed as a single string
+#         if len(midpoints) == 1 and ',' in midpoints[0]:
+#             midpoints = midpoints[0].split(',')
+
+#         points = [startpoint] + midpoints + [endpoint]
+
+#         # Get latitude and longitude for each point using Nominatim
+#         locations_with_coordinates = []
+#         for point in points:
+#             location_info = self.get_lat_lng(point)
+#             if location_info:
+#                 locations_with_coordinates.append(location_info)
+#             else:
+#                 return JsonResponse({'error': f'Could not geocode location: {point}'}, status=400)
+
+#         return JsonResponse({
+#             'locations': locations_with_coordinates,
+#             'map_url': self.generate_map_url(points)
+#         })
+
+#     def get_lat_lng(self, location):
+#         """Get latitude and longitude for a given location using Nominatim API."""
+#         endpoint = "https://nominatim.openstreetmap.org/search"
+#         params = {
+#             'q': location,
+#             'format': 'json',
+#             'limit': 1
+#         }
+#         try:
+#             response = requests.get(endpoint, params=params, timeout=10)  # Set a timeout
+#             if response.status_code == 200:
+#                 data = response.json()
+#                 if data:
+#                     location_data = data[0]
+#                     return {
+#                         'name': location,
+#                         'latitude': location_data['lat'],
+#                         'longitude': location_data['lon']
+#                     }
+#         except requests.exceptions.RequestException as e:
+#             print(f"Request error: {e}")
+#         return None
+
+
+#     def generate_map_url(self, points):
+#         base_url = "https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route="
+#         # URL encode each point to ensure proper formatting in the URL
+#         encoded_points = ["{}%2C{}".format(urllib.parse.quote_plus(point.strip()), "node") for point in points]
+#         url = base_url + "/".join(encoded_points)
+#         return url
+
+
 from django.http import JsonResponse
 from django.views import View
 import requests
@@ -221,7 +287,7 @@ class MapView(View):
 
         return JsonResponse({
             'locations': locations_with_coordinates,
-            'map_url': self.generate_map_url(points)
+            'map_url': self.generate_map_url(locations_with_coordinates)
         })
 
     def get_lat_lng(self, location):
@@ -233,7 +299,9 @@ class MapView(View):
             'limit': 1
         }
         try:
-            response = requests.get(endpoint, params=params, timeout=10)  # Set a timeout
+            response = requests.get(endpoint, params=params, timeout=30)  # Increased timeout to 30 seconds
+            # print(f"Response Status Code: {response.status_code}")
+            # print(f"Response Content: {response.text}")
             if response.status_code == 200:
                 data = response.json()
                 if data:
@@ -243,15 +311,15 @@ class MapView(View):
                         'latitude': location_data['lat'],
                         'longitude': location_data['lon']
                     }
+            else:
+                print(f"Failed to get data for location: {location}")
         except requests.exceptions.RequestException as e:
             print(f"Request error: {e}")
         return None
 
-
-    def generate_map_url(self, points):
+    def generate_map_url(self, locations_with_coordinates):
         base_url = "https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route="
         # URL encode each point to ensure proper formatting in the URL
-        encoded_points = ["{}%2C{}".format(urllib.parse.quote_plus(point.strip()), "node") for point in points]
-        url = base_url + "/".join(encoded_points)
+        encoded_points = ["{}%2C{}".format(location['latitude'], location['longitude']) for location in locations_with_coordinates]
+        url = base_url + ";".join(encoded_points)
         return url
-
